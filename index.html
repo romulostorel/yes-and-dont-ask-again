@@ -117,15 +117,6 @@ body{
 .diff .add{color:var(--green)}
 .diff .ctx{color:var(--faint)}
 
-/* the receipt stamp on a command you didn't read */
-.stamp{
-  color:var(--red);
-  font-size:.82em;
-  letter-spacing:.03em;
-  padding-left:1ch;
-}
-.stamp.read{color:var(--faint)}
-
 /* ── welcome box + permission box (CSS borders read as TUI boxes) ── */
 .box{
   border:1px solid var(--faint);
@@ -1230,16 +1221,11 @@ async function main(){
   }
 }
 
+/* Timing is recorded silently and never shown during play: a visible stamp
+   announces that you are being measured, and anyone who knows that starts
+   reading. The whole receipt lands at once on the death screen instead. */
 function record(step, r, accepted){
   S.ledger.push({cmd:step.c, ms:r.ms||0, accepted, auto:!!r.auto, tell:step.tell});
-  /* the receipt, stamped right under the box you just cleared.
-     auto-accepts already show their own "→ 1" ghost keystroke. */
-  if (accepted && !r.auto){
-    const secs = r.ms/1000;
-    const s = el("div","row stamp"+(secs >= 2.5 ? " read":""));
-    s.textContent = `   ${secs < 10 ? secs.toFixed(1) : Math.round(secs)}s na tela${secs < 1 ? " · não lido" : ""}`;
-    add(s);
-  }
 }
 
 /* ── endings ─────────────────────────────────────────────── */
