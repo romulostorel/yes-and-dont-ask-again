@@ -463,7 +463,11 @@ function elapsed(){
 }
 function burnTokens(n){
   S.tokens += n;
-  S.ctx = Math.max(3, S.ctx - n/9200);
+  /* ~226k tokens over a full session, and the arc wants ~133 points of drain:
+     amber mid-game, the compact firing as a false relief around 60% through,
+     then red again right at the finale. 9200 only spent 24 points, which left
+     the compact beat and both warning colours unreachable. */
+  S.ctx = Math.max(3, S.ctx - n/1700);
   paintStatus();
 }
 function paintStatus(){
