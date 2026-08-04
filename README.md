@@ -49,6 +49,8 @@ Tudo mora em `index.html`. As partes que valem mexer:
 | os finais que matam a sessão | `const KILLS` |
 | tools que não pedem permissão (`Read`, `Grep`) | `const FREEBIES` |
 | as falas do Claude entre os comandos | `const PROSE` |
+| as reações de "acho que fiz merda" | `const OOPS` |
+| o colapso do registro, uma vez por sessão | `meltdown()` |
 | verbos do spinner (`Percolating…`) | `VERBS_OK` / `VERBS_OFF` |
 | quando cada tier começa | `tierFor()` |
 | quantos aceites até a morte | `killAt()` |
@@ -68,7 +70,14 @@ Empurra um objeto no tier certo de `TIERS`:
 
 Campos opcionais: `kind` (`"Edit"` / `"Write"` / `"MCP"`), `diff` (linhas
 `["add"|"del"|"ctx", texto]`), `after` (um segundo tool call que revela a merda que o
-primeiro fez), `ok` / `bad` (cor do `●`), `note` (o que mostrar quando não tem output).
+primeiro fez), `ok` / `bad` (cor do `●`), `note` (o que mostrar quando não tem output),
+`oops` (a ficha caindo depois que já foi).
+
+O `oops` sempre dispara; sem ele, sorteia do `OOPS` do tier — e sorteia pouco, porque
+um Claude que entra em pânico toda vez para de ter graça. A piada é ele **não** notar.
+Mantém as falas no registro do Claude Code de verdade: o understatement é o que faz rir,
+não o palavrão. `"I should mention those were the only backups."` bate mais forte que
+qualquer grito.
 
 O campo `w` é onde a piada vive. Quanto mais razoável a justificativa, pior o comando.
 E o `tell` é o que o extrato mostra no fim: a cláusula que você realmente autorizou,
