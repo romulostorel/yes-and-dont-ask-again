@@ -53,7 +53,8 @@ Tudo mora em `index.html`. As partes que valem mexer:
 | o colapso do registro, uma vez por sessão | `meltdown()` |
 | verbos do spinner (`Percolating…`) | `VERBS_OK` / `VERBS_OFF` |
 | quando cada tier começa | `tierFor()` |
-| quantos aceites até a morte | `killAt()` |
+| quantos aceites até a morte | `KILL_AT` / `KILL_AT_AUTO` |
+| o arco do medidor de contexto | `ctxFor()` |
 | os ranks e seus textos | `rankFor()` |
 | a tela de morte | `buildSlate()` |
 | o texto que o botão copia | `shareText()` |
@@ -91,6 +92,25 @@ puxada de dentro da parede onde estava enterrada.
 `refuse` — o que acontece se você recusar no último segundo. O `refuse` tem duas falas,
 um `mid` (um comando intermediário que o Claude roda pra "atender" sua objeção) e o
 `final`, que ele executa de qualquer forma.
+
+## Ritmo
+
+`KILL_AT = 16` é o número de aceites até o final (`KILL_AT_AUTO = 12` se você ligar
+o `▸▸`). Mexer nele é seguro: o `tierFor()` distribui os tiers proporcionalmente e o
+`ctxFor()` deriva o medidor de contexto do progresso, então o arco continua batendo.
+
+Estava em 27 antes, o que dava 72s pra quem spammava o `1` e de 3,5 a 6 minutos pra
+quem realmente olhava os comandos — ou seja, só quem não lia chegava no extrato final,
+que é justo o contrário do que interessa. Hoje, com a animação entre prompts em ~1,8s:
+
+| como se joga | tempo até o final |
+|---|---|
+| spam no `1` | ~30s |
+| 5s por comando | ~1min 50s |
+| lendo as paredes de verdade | ~3min |
+
+Os pools têm 41 comandos e uma partida mostra 16, de propósito: o excedente é
+variedade entre partidas, não meta a ser cumprida.
 
 ## Como se joga
 

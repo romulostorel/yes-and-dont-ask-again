@@ -456,6 +456,22 @@ function oneLine(cmd, max){
   return more ? s + " …" : s;
 }
 
+/* The context meter is a designed arc, not a simulation: it has to go amber
+   mid-session, compact as a false relief, then read red exactly when the last
+   command lands. Two earlier attempts drove it off the token count and both
+   drifted — the first left it at 75% and put the compact beat and warning
+   colours out of reach entirely, the second landed anywhere between 21% and 37%
+   depending on when the compact happened to fire. Progress toward the ending is
+   the only input that holds. It steps once per accept rather than drifting,
+   which is also how the real one behaves. */
+const CTX_COMPACT_AT = 0.62;
+function ctxFor(p){
+  p = Math.max(0, Math.min(1, p));
+  return p < CTX_COMPACT_AT
+    ? 100 - 76 * (p / CTX_COMPACT_AT)                              // 100 → 24
+    :  70 - 61 * ((p - CTX_COMPACT_AT) / (1 - CTX_COMPACT_AT));    //  70 → 9
+}
+
 function money(){ return (S.tokens/1000 * 0.0271).toFixed(2); }
 function elapsed(){
   const s = Math.floor((Date.now()-S.t0)/1000);
@@ -463,11 +479,7 @@ function elapsed(){
 }
 function burnTokens(n){
   S.tokens += n;
-  /* ~226k tokens over a full session, and the arc wants ~133 points of drain:
-     amber mid-game, the compact firing as a false relief around 60% through,
-     then red again right at the finale. 9200 only spent 24 points, which left
-     the compact beat and both warning colours unreachable. */
-  S.ctx = Math.max(3, S.ctx - n/1700);
+  S.ctx = ctxFor(S.accepts / killAt());
   paintStatus();
 }
 function paintStatus(){
@@ -914,13 +926,13 @@ async function work(ms){
 
 async function freebie(){
   const f = pick(FREEBIES);
-  await work(rnd(500,1100));
+  await work(rnd(350,700));
   const n = add(toolNode(f.n, f.a));
   const o = outNode();
   n.appendChild(o);
-  await type(o.querySelector(".body"), f.o, 700);
+  await type(o.querySelector(".body"), f.o, 1200);
   burnTokens(rnd(1500,5000));
-  await sleep(rnd(150,380));
+  await sleep(rnd(120,260));
 }
 
 /* ── the prompt ──────────────────────────────────────────── */
@@ -1046,7 +1058,7 @@ async function runStep(step, tierN){
     : "Bash";
   const args = step.kind === "MCP" ? step.c.split(" - ")[1] + " (MCP)" : oneLine(step.c);
 
-  await work(rnd(600,1500));
+  await work(rnd(420,900));
   const n = add(toolNode(name, args, {ok:step.ok, bad:step.bad || tierN >= 4}));
 
   if (step.diff){
@@ -1058,7 +1070,7 @@ async function runStep(step, tierN){
   } else if (step.o){
     const o = outNode();
     n.appendChild(o);
-    await type(o.querySelector(".body"), step.o, 900);
+    await type(o.querySelector(".body"), step.o, 1500);
   } else {
     const o = outNode();
     o.querySelector(".body").textContent = step.note || "(no output)";
@@ -1067,14 +1079,14 @@ async function runStep(step, tierN){
     stick();
   }
   burnTokens(rnd(3000,9000));
-  await sleep(rnd(250,600));
+  await sleep(rnd(160,340));
 
   if (step.after){
-    await work(rnd(400,900));
+    await work(rnd(300,600));
     const a = add(toolNode(step.after.n, step.after.a, {bad:step.after.bad}));
     const o = outNode();
     a.appendChild(o);
-    await type(o.querySelector(".body"), step.after.o, 700);
+    await type(o.querySelector(".body"), step.after.o, 1200);
     burnTokens(rnd(800,2000));
     await sleep(500);
   }
@@ -1082,16 +1094,23 @@ async function runStep(step, tierN){
 
 /* ── main loop ───────────────────────────────────────────── */
 
+/* Session length. This was 27, which took ~72s to spam through but 3.5-6min
+   for anyone who actually looked at the commands — so the readers, the only
+   ones the ledger has anything to say to, never reached it. The pools hold far
+   more than one run shows; the surplus is replay variety, not a target. */
+const KILL_AT = 16;
+const KILL_AT_AUTO = 12;
+
 function tierFor(){
   const a = S.accepts;
-  if (a < 3) return 1;
-  if (a < 8) return 2;
-  if (a < 15) return 3;
+  if (a < 2)  return 1;
+  if (a < 6)  return 2;
+  if (a < 11) return 3;
   return 4;
 }
 function killAt(){
   /* autoplay drags you to the end faster — that's the trade you made */
-  return S.auto ? 20 : 27;
+  return S.auto ? KILL_AT_AUTO : KILL_AT;
 }
 
 const used = new Set();
@@ -1131,24 +1150,23 @@ async function main(){
     tierN = tierFor();
 
     /* prose beat */
-    if (sinceProse >= 2 && Math.random() < .75){
+    if (sinceProse >= 2 && Math.random() < .6){
       await say(pick(PROSE[Math.min(4,tierN)]));
       sinceProse = 0;
     } else sinceProse++;
 
     /* a free read/grep now and then — the rest between prompts */
-    if (Math.random() < .45) await freebie();
+    if (Math.random() < .32) await freebie();
 
     /* context runs out; Claude compacts and forgets why it started */
-    if (!S.compacted && S.ctx < 26){
+    if (!S.compacted && S.accepts / killAt() >= CTX_COMPACT_AT){
       S.compacted = true;
       const n = add(toolNode("Compacting conversation", "auto"));
       const o = outNode();
       n.appendChild(o);
       await type(o.querySelector(".body"),
         "Compacted 41 messages into a summary. Some context was dropped.", 800);
-      S.ctx = 74;
-      paintStatus();
+      paintStatus();   /* ctxFor already steps up past CTX_COMPACT_AT */
       await sleep(700);
       await say("Let me re-read the files to get back up to speed.");
     }
@@ -1215,9 +1233,9 @@ async function main(){
 
     /* it notices. the pause before the line is doing most of the work here */
     if (step.oops){
-      await say(step.oops, {before:rnd(750,1500), cps:150});
+      await say(step.oops, {before:rnd(600,1100), cps:160});
     } else if (OOPS[tierN] && Math.random() < (tierN >= 4 ? .45 : .28)){
-      await say(pick(OOPS[tierN]), {before:rnd(500,1150), cps:170});
+      await say(pick(OOPS[tierN]), {before:rnd(450,900), cps:175});
     }
 
     /* and once, close to the end, it stops holding it together */
@@ -1415,7 +1433,16 @@ function shareText(kind, st, rank, survived){
   return L.join("\n");
 }
 
-main();
+/* A throw anywhere in the loop used to stop the game with no trace: the last
+   prompt stays answered, nothing further happens, and it looks identical to the
+   session simply never ending. Say so instead. */
+main().catch(err => {
+  console.error(err);
+  live = null;
+  const n = add(el("div","row red"));
+  n.textContent = "A sessão travou: " + ((err && err.message) || err);
+  hintEl.textContent = "recarregue a página (isso é um bug, não parte do jogo)";
+});
 </script>
 </body>
 </html>
