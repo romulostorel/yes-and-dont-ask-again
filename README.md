@@ -46,7 +46,7 @@ Tudo mora em `index.html`. As partes que valem mexer:
 | o que | onde |
 |---|---|
 | a escada de comandos, 5 tiers | `const TIERS` |
-| o comando final que mata a sessão | `const KILL` / `const KILL_ALT` |
+| os finais que matam a sessão | `const KILLS` |
 | tools que não pedem permissão (`Read`, `Grep`) | `const FREEBIES` |
 | as falas do Claude entre os comandos | `const PROSE` |
 | verbos do spinner (`Percolating…`) | `VERBS_OK` / `VERBS_OFF` |
@@ -71,6 +71,17 @@ Campos opcionais: `kind` (`"Edit"` / `"Write"` / `"MCP"`), `diff` (linhas
 primeiro fez), `ok` / `bad` (cor do `●`), `note` (o que mostrar quando não tem output).
 
 O campo `w` é onde a piada vive. Quanto mais razoável a justificativa, pior o comando.
+E o `tell` é o que o extrato mostra no fim: a cláusula que você realmente autorizou,
+puxada de dentro da parede onde estava enterrada.
+
+### Adicionar um final
+
+`KILLS` é uma lista, e a sessão sorteia um no carregamento. Cada final precisa de
+`setup` (a fala que prepara), `c` / `w` / `tell` / `o` como qualquer comando, `dying`
+(a última linha antes da tela apagar), `lede` e `share` (os textos da lápide), e um
+`refuse` — o que acontece se você recusar no último segundo. O `refuse` tem duas falas,
+um `mid` (um comando intermediário que o Claude roda pra "atender" sua objeção) e o
+`final`, que ele executa de qualquer forma.
 
 ## Como se joga
 
