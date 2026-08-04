@@ -19,25 +19,25 @@ Tudo está inline num arquivo só, inclusive a fonte, justamente pra isso funcio
 servidor. Se você quebrar em ES modules depois, `file://` passa a bloquear por CORS e
 você vai precisar de `python3 -m http.server` só pra ver a página.
 
-## Publicar no GitHub Pages
+## No ar
+
+**https://romulostorel.github.io/yes-and-dont-ask-again/**
+
+Pages serve da `main` / `root`. `git push` já republica — leva um ou dois minutos.
+O `.nojekyll` está aí pra o Pages servir o arquivo cru em vez de passar pelo Jekyll.
+
+Se algum dia precisar reconfigurar do zero:
 
 ```sh
-gh repo create tigrinho-dev --public --source=. --push
-gh api -X POST repos/:owner/tigrinho-dev/pages -f build_type=legacy \
+gh api -X POST repos/:owner/yes-and-dont-ask-again/pages -f build_type=legacy \
   -F 'source[branch]=main' -F 'source[path]=/'
 ```
-
-Ou pela interface: Settings → Pages → Deploy from a branch → `main` / `root`.
-
-Sai no ar em `https://<user>.github.io/tigrinho-dev/` em um ou dois minutos.
-
-O `.nojekyll` está aí pra o Pages servir o arquivo cru em vez de passar pelo Jekyll.
 
 ### Domínio próprio
 
 Se você registrar o `tigrinho.dev`, cria um arquivo `CNAME` com o domínio dentro e
-aponta o DNS pros IPs do Pages (`185.199.108.153` … `.111.153`). Aí dá pra tirar o
-`/tigrinho-dev` da URL.
+aponta o DNS pros IPs do Pages (`185.199.108.153` … `.111.153`). Aí sai o
+`/yes-and-dont-ask-again` do caminho.
 
 ## Editar
 
